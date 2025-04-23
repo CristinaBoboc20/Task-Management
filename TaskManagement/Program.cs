@@ -1,5 +1,8 @@
 using DotNetEnv;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+using TaskManagement.Authentication;
 using TaskManagement.Data;
 
 
@@ -15,8 +18,12 @@ var configuration = builder.Configuration;
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+
 
 // Use env variables to build the connection..
 var connectionString = $"Host={Environment.GetEnvironmentVariable("DB_HOST")};" +
@@ -30,6 +37,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseNpgsql(connectionString);
 });
+
+// Register Basic Authentication
+builder.Services.AddAuthentication("BasicAuthentication")
+       .AddScheme<AuthenticationSchemeOptions, BasicAuthentication>("BasicAuthentication", null);
+
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -50,6 +63,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 
