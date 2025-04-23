@@ -15,27 +15,27 @@ namespace TaskManagement.Data
         {
             base.OnModelCreating(modelBuilder);
             
-            // define table names
+            // Define table names
             modelBuilder.Entity<User>().ToTable("Users");
             modelBuilder.Entity<TaskItem>().ToTable("Tasks");
             modelBuilder.Entity<TaskUser>().ToTable("TaskUsers");
 
-            //TaskUser has TaskUserId as primary key
+            // TaskUser has TaskUserId as primary key
             modelBuilder.Entity<TaskUser>().HasKey(tu => tu.TaskUserId);
 
-            //prevent TaskUser duplicates 
+            // Prevent TaskUser duplicates 
             modelBuilder.Entity<TaskUser>().HasIndex(tu => new { tu.TaskId, tu.UserId })
                                            .IsUnique();
 
-            //TaskUser (associative table) for many to many relation between tasks and users
+            // TaskUser (associative table) for many to many relation between tasks and users
 
-            //A Task can be shared with many users  
+            // A Task can be shared with many users  
             modelBuilder.Entity<TaskUser>().HasOne(tu => tu.Task)
                                            .WithMany(t => t.Participants)
                                            .HasForeignKey(tu => tu.TaskId)
                                            .OnDelete(DeleteBehavior.Cascade); //if a task is deleted also delete related TaskUser
 
-            //A User can have many shared tasks
+            // A User can have many shared tasks
             modelBuilder.Entity<TaskUser>().HasOne(tu => tu.User)
                                            .WithMany(u => u.SharedTasks)
                                            .HasForeignKey(tu => tu.UserId)
@@ -48,7 +48,7 @@ namespace TaskManagement.Data
                                            .HasForeignKey(t => t.ReporterId)
                                            .OnDelete(DeleteBehavior.Restrict); //prevent deleting a reporter that has tasks
 
-            //store enums as strings
+            // Store enums as strings
 
             modelBuilder.Entity<TaskItem>().Property(t => t.Status)
                                            .HasConversion<string>();

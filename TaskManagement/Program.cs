@@ -1,5 +1,4 @@
 using DotNetEnv;
-
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Data;
 
@@ -34,12 +33,20 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 var app = builder.Build();
 
+// Seed users
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    SeedData.SeedUsers(context);
+} 
+
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     
     app.MapOpenApi();
-    app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "task api"));
+    app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v1.json", "task api"));
 }
 
 app.UseHttpsRedirection();
