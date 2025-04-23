@@ -23,6 +23,10 @@ namespace TaskManagement.Data
             //TaskUser has TaskUserId as primary key
             modelBuilder.Entity<TaskUser>().HasKey(tu => tu.TaskUserId);
 
+            //prevent TaskUser duplicates 
+            modelBuilder.Entity<TaskUser>().HasIndex(tu => new { tu.TaskId, tu.UserId })
+                                           .IsUnique();
+
             //TaskUser (associative table) for many to many relation between tasks and users
 
             //A Task can be shared with many users  
