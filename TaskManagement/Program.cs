@@ -19,10 +19,36 @@ var configuration = builder.Configuration;
 
 builder.Services.AddControllers();
 
+//Add Swagger
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Task Management API", Version = "v1" });
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+    c.AddSecurityDefinition("basic", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "basic",
+        In = ParameterLocation.Header,
+        Description = "Basic Authentication Header"
+    });
 
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "basic"
+                }
+            },
+
+            new string[] {}
+        }
+    });
+});
 
 
 // Use env variables to build the connection..
@@ -58,8 +84,8 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     
-    app.MapOpenApi();
-    app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v1.json", "task api"));
+    app.UseSwagger();
+    app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v1/swagger.json", "Task Management API v1"));
 }
 
 app.UseHttpsRedirection();
