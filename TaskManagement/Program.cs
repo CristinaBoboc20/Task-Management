@@ -2,8 +2,11 @@ using DotNetEnv;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using System.Text.Json.Serialization;
 using TaskManagement.Authentication;
 using TaskManagement.Data;
+using TaskManagement.Repositories;
+using TaskManagement.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,7 +20,15 @@ var configuration = builder.Configuration;
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+     {
+         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+
+     });
+
+// Add AutoMapper
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 //Add Swagger
 builder.Services.AddSwaggerGen(c =>
@@ -63,6 +74,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseNpgsql(connectionString);
 });
+
+// Register Task Service
+builder.Services.AddScoped<ITasksService, TasksService>();
+
+// Register Task Repository
+builder.Services.AddTransient<ITasksRepository, TasksRepository>();
 
 // Register Basic Authentication
 builder.Services.AddAuthentication("BasicAuthentication")
