@@ -105,6 +105,22 @@ namespace TaskManagement.Services
             }
         }
 
+        // Share a task with multiple users
+        public async Task ShareTaskMultipleUsersAsync(Guid taskId, List<Guid> userIds)
+        {
+            try
+            {
+                // Share task with each user
+                foreach(Guid userId in userIds)
+                {
+                    await _tasksRepository.ShareTaskUserAsync(taskId, userId);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error occurred while sharing the task with multiple users");
+            }
+        }
 
     }
 }

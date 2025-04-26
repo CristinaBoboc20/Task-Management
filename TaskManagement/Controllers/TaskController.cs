@@ -187,6 +187,33 @@ namespace TaskManagement.Controllers
             }
         }
 
+        // POST: api/Task/{taskId}/share/participants
+        [HttpPost("{taskId}/share/participants")]
+        public async Task<IActionResult> ShareTaskMultipleUsers([FromRoute] Guid taskId, [FromBody] List<Guid> participantIds)
+        {
+            try
+            {
+                // Retrieve task by its ID
+                TaskItem task = await _tasksService.GetTaskByIdAsync(taskId);
+
+                Guid userId = GetUserId();
+                bool admin = IsAdmin();
+
+                //Only the creator or an admin can share the task
+                if (task.ReporterId != userId && !admin)
+                {
+                    return Forbid();
+                }
+
+                await _tasksService.ShareTaskMultipleUsersAsync(taskId, participantIds);
+
+                return Ok("Task was shared successfully with selected users");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
         // Retrieve the user's id from claims
         private Guid GetUserId()

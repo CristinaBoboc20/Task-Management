@@ -142,7 +142,7 @@ namespace TaskManagement.Repositories
 
                 if(taskUserDb != null)
                 {
-                    throw new Exception("Task is already shared with this user");
+                    return;
                 }
 
                 // Initialize a new shared task instance

@@ -21,5 +21,8 @@ namespace TaskManagement.Services
 
         // Share a task with another user
         public Task ShareTaskUserAsync(Guid taskId, Guid userId);
+
+        // Share a task with multiple users
+        public Task ShareTaskMultipleUsersAsync(Guid taskId, List<Guid> userIds);
     }
 }
