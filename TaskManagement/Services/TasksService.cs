@@ -20,121 +20,106 @@ namespace TaskManagement.Services
 
         public async Task<TaskItem> GetTaskByIdAsync(Guid taskId)
         {
-            try
-            {
-                TaskItem task = await _tasksRepository.GetTaskByIdAsync(taskId);
+            TaskItem task = await _tasksRepository.GetTaskByIdAsync(taskId);
 
-                if (task == null)
-                {
-                    throw new Exception("Task not found");
-                }
-
-                return task;
-            }
-            catch (Exception ex)
+            if (task == null)
             {
-                throw new Exception("Error while retrieving the specified task", ex);
+                throw new KeyNotFoundException("Task not found");
             }
+
+            return task;
+           
         }
 
         // Get all the tasks reported by a specific user
 
         public async Task<IEnumerable<TaskItem>> GetTasksUserAsync(Guid userId)
         {
-            try
-            {
-                return await _tasksRepository.GetTasksUserAsync(userId);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error while retrieving all the tasks created by the specified user", ex);
-            }
+            return await _tasksRepository.GetTasksUserAsync(userId);
         }
 
         // Create a new task
 
         public async Task<TaskItem> CreateTaskAsync(TaskItem task)
         {
-            try
-            {
-                return await _tasksRepository.CreateTaskAsync(task);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error while creating this task", ex);
-            }
+            return await _tasksRepository.CreateTaskAsync(task);  
         }
 
         // Update an existing task
 
         public async Task<TaskItem> UpdateTaskAsync(Guid taskId, TaskItem task)
         {
-            try
+            TaskItem existingTask = await _tasksRepository.GetTaskByIdAsync(taskId);
+
+            if(existingTask == null)
             {
-                return await _tasksRepository.UpdateTaskAsync(taskId, task);
+                throw new KeyNotFoundException("Task not found");
             }
-            catch (Exception ex)
-            {
-                throw new Exception("Error occurred while updating task", ex);
-            }
+            
+            return await _tasksRepository.UpdateTaskAsync(taskId, task);
+            
         }
 
         // Delete a task
 
         public async Task<bool> DeleteTaskAsync(Guid taskId)
         {
-            try
+
+            TaskItem existingTask = await _tasksRepository.GetTaskByIdAsync(taskId);
+
+            if (existingTask == null)
             {
-                return await _tasksRepository.DeleteTaskAsync(taskId);
+                throw new KeyNotFoundException("Task not found");
             }
-            catch (Exception ex)
-            {
-                throw new Exception("Error occurred while deleting task", ex);
-            }
-        
+
+            return await _tasksRepository.DeleteTaskAsync(taskId);
+          
         }
 
         // Share a task with another user
         public async Task ShareTaskUserAsync(Guid taskId, UserPermissionDTO participant)
         {
-            try
+            TaskItem existingTask = await _tasksRepository.GetTaskByIdAsync(taskId);
+
+            if (existingTask == null)
             {
-                await _tasksRepository.ShareTaskUserAsync(taskId, participant.UserId, participant.Permission);
+                throw new KeyNotFoundException("Task not found");
             }
-            catch (Exception ex)
-            {
-                throw new Exception("Error occurred while sharing the task with another user", ex);
-            }
+
+            await _tasksRepository.ShareTaskUserAsync(taskId, participant.UserId, participant.Permission);
+        
         }
 
         // Share a task with multiple users
         public async Task ShareTaskMultipleUsersAsync(Guid taskId, List<UserPermissionDTO> participants)
         {
-            try
+            TaskItem existingTask = await _tasksRepository.GetTaskByIdAsync(taskId);
+
+            if (existingTask == null)
             {
-                // Share task with each user
-                foreach(UserPermissionDTO participant in participants)
-                {
-                    await _tasksRepository.ShareTaskUserAsync(taskId, participant.UserId, participant.Permission);
-                }
+                throw new KeyNotFoundException("Task not found");
             }
-            catch (Exception ex)
+           
+            // Share task with each user
+            foreach(UserPermissionDTO participant in participants)
             {
-                throw new Exception("Error occurred while sharing the task with multiple users");
+                await _tasksRepository.ShareTaskUserAsync(taskId, participant.UserId, participant.Permission);
             }
+            
         }
 
         // Check if the user has permission to edit the task
         public async Task<bool> UserPermissionEditTaskAsync(Guid taskId, Guid userId)
         {
-            try
+            TaskItem existingTask = await _tasksRepository.GetTaskByIdAsync(taskId);
+
+            if (existingTask == null)
             {
-                return await _tasksRepository.GetUserPermissionEditTaskAsync(taskId, userId);
+                throw new KeyNotFoundException("Task not found");
             }
-            catch (Exception ex)
-            {
-                throw new Exception("Error occured while checking user permission to edit task", ex);
-            }
+
+            return await _tasksRepository.GetUserPermissionEditTaskAsync(taskId, userId);
+            
         }
 
     }

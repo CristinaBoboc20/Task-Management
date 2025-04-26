@@ -7,6 +7,7 @@ using System.Net;
 using System.Security.Claims;
 using TaskManagement.DTOs;
 using TaskManagement.Enums;
+using TaskManagement.Helpers;
 using TaskManagement.Models;
 using TaskManagement.Services;
 
@@ -30,27 +31,25 @@ namespace TaskManagement.Controllers
         [HttpGet("{taskId}")]
         public async Task<IActionResult> GetTaskById([FromRoute] Guid taskId)
         {
-            try
+            
+            // Retrieve task using its ID
+            TaskItem task = await _tasksService.GetTaskByIdAsync(taskId);
+
+            Guid userId = GetUserId();
+            bool admin = IsAdmin();
+
+
+            // Allow only the task creator, a participant or admin to access the task
+            if (task.ReporterId != userId && !task.Participants.Any(p => p.UserId == userId) && !admin)
             {
-                // Retrieve task using its ID
-                TaskItem task = await _tasksService.GetTaskByIdAsync(taskId);
-
-                Guid userId = GetUserId();
-                bool admin = IsAdmin();
-
-
-                // Allow only the task creator, a participant or admin to access the task
-                if (task.ReporterId != userId && !task.Participants.Any(p => p.UserId == userId) && !admin)
-                {
-                    return Forbid(); // Deny access
-                }
-                
-                return Ok(task); 
+                throw new UnauthorizedAccessException("You don't have permission");
             }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+
+            ApiResponse<TaskItem> response = new ApiResponse<TaskItem>((int)HttpStatusCode.OK, "Task retrieved successfully", task);
+
+            return Ok(response);
+
+            
 
         }
 
@@ -59,20 +58,15 @@ namespace TaskManagement.Controllers
         [HttpGet]
         public async Task<IActionResult> GetUserTasks()
         { 
-            try
-            {
-                // Get the current user's ID
-                Guid userId = GetUserId();
+            // Get the current user's ID
+            Guid userId = GetUserId();
 
-                //Retrieve all the tasks created by the current user
-                IEnumerable<TaskItem> tasks = await _tasksService.GetTasksUserAsync(userId);
-                
-                return Ok(tasks);
-            }
-            catch(Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            //Retrieve all the tasks created by the current user
+            IEnumerable<TaskItem> tasks = await _tasksService.GetTasksUserAsync(userId);
+
+            ApiResponse<IEnumerable<TaskItem>> response = new ApiResponse<IEnumerable<TaskItem>>((int)HttpStatusCode.OK, "Task retrieved successfully", tasks);
+            return Ok(response);
+
         }
 
         //Create a new task
@@ -80,23 +74,20 @@ namespace TaskManagement.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateTask([FromBody] CreateUpdateTaskDTO taskDTO)
         {
-            try
-            {
-                // Mapping CreateUpdateTaskDTO to TaskItem
-                TaskItem task = _mapper.Map<TaskItem>(taskDTO);
 
-                // Set the creator of the task as the current user
-                task.ReporterId = GetUserId();
+            // Mapping CreateUpdateTaskDTO to TaskItem
+            TaskItem task = _mapper.Map<TaskItem>(taskDTO);
+
+            // Set the creator of the task as the current user
+            task.ReporterId = GetUserId();
                  
-                TaskItem createdTask = await _tasksService.CreateTaskAsync(task);
+            TaskItem createdTask = await _tasksService.CreateTaskAsync(task);
 
-                return CreatedAtAction(nameof(GetTaskById), new { taskId = createdTask.TaskId }, createdTask);
+            ApiResponse<TaskItem> response = new ApiResponse<TaskItem>((int)HttpStatusCode.Created, "Task created successfully", createdTask);
+            
+            return CreatedAtAction(nameof(GetTaskById), new { taskId = createdTask.TaskId }, response);
 
-            }
-            catch(Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+
         }
 
         // Update an existing task
@@ -104,37 +95,34 @@ namespace TaskManagement.Controllers
         [HttpPut("{taskId}")]
         public async Task<IActionResult> UpdateTask([FromRoute] Guid taskId, [FromBody] CreateUpdateTaskDTO taskDTO)
         {
-            try
-            {
-                // Get the existing Task
-                TaskItem existingTask = await _tasksService.GetTaskByIdAsync(taskId);
+           
+            // Get the existing Task
+            TaskItem existingTask = await _tasksService.GetTaskByIdAsync(taskId);
 
-                Guid userId = GetUserId();
+            Guid userId = GetUserId();
                 
-                bool admin = IsAdmin();
+            bool admin = IsAdmin();
 
-                bool participantEditPermission = await _tasksService.UserPermissionEditTaskAsync(taskId, userId);
+            bool participantEditPermission = await _tasksService.UserPermissionEditTaskAsync(taskId, userId);
 
-                bool hasEditPermission = existingTask.ReporterId == userId || admin || participantEditPermission;
+            bool hasEditPermission = existingTask.ReporterId == userId || admin || participantEditPermission;
                 
-                // Only the creator, an admin or a participant that has write permission can update the task
-                if (!hasEditPermission)
-                {
-                    return Forbid(); // Deny access
-                }
-
-                // Mapping CreateUpdateTaskDTO to existing TaskItem
-                _mapper.Map(taskDTO, existingTask);
-
-                // Update the task with the new data
-                TaskItem updatedTask = await _tasksService.UpdateTaskAsync(taskId, existingTask);
-
-                return Ok(updatedTask);
-            }
-            catch (Exception ex)
+            // Only the creator, an admin or a participant that has write permission can update the task
+            if (!hasEditPermission)
             {
-                return BadRequest(ex.Message);
+                throw new UnauthorizedAccessException("You don't have permission..");
             }
+
+            // Mapping CreateUpdateTaskDTO to existing TaskItem
+            _mapper.Map(taskDTO, existingTask);
+
+            // Update the task with the new data
+            TaskItem updatedTask = await _tasksService.UpdateTaskAsync(taskId, existingTask);
+
+            ApiResponse<TaskItem> response = new ApiResponse<TaskItem>((int)HttpStatusCode.OK, "Task updated successfully", updatedTask);
+
+            return Ok(response);
+          
         }
 
         // Delete a task
@@ -142,85 +130,76 @@ namespace TaskManagement.Controllers
         [HttpDelete("{taskId}")]
         public async Task<IActionResult> DeleteTask([FromRoute] Guid taskId)
         {
-            try
+            // Get the existing task
+            TaskItem task = await _tasksService.GetTaskByIdAsync(taskId);
+
+            Guid userId = GetUserId();
+
+            bool admin = IsAdmin();
+
+            // Only the creator or an admin can delete the task
+            if (task.ReporterId != userId && !admin)
             {
-                // Get the existing task
-                TaskItem task = await _tasksService.GetTaskByIdAsync(taskId);
-
-                Guid userId = GetUserId();
-
-                bool admin = IsAdmin();
-
-                // Only the creator or an admin can delete the task
-                if (task.ReporterId != userId && !admin)
-                {
-                    return Forbid(); // Deny access
-                }
-
-                await _tasksService.DeleteTaskAsync(taskId);
-
-                return Ok("Task was successfully deleted");
+                throw new UnauthorizedAccessException("You don't have permission..");
             }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+
+            await _tasksService.DeleteTaskAsync(taskId);
+
+            ApiResponse<string> response = new ApiResponse<string>((int)HttpStatusCode.OK, "Task was deleted successfully");
+
+            return Ok(response);
+
         }
 
         // POST: apo/Task/{taskId}/share/participant
         [HttpPost("{taskId}/share/participant")]
         public async Task<IActionResult> ShareTask([FromRoute] Guid taskId, [FromBody] UserPermissionDTO participant)
         {
-            try
+           
+            // Get the existing task
+            TaskItem task = await _tasksService.GetTaskByIdAsync(taskId);
+
+            Guid userId = GetUserId();
+
+            bool admin = IsAdmin();
+
+            //Only the creator or an admin can share the task
+            if (task.ReporterId != userId && !admin)
             {
-                // Get the existing task
-                TaskItem task = await _tasksService.GetTaskByIdAsync(taskId);
-
-                Guid userId = GetUserId();
-
-                bool admin = IsAdmin();
-
-                //Only the creator or an admin can share the task
-                if (task.ReporterId != userId && !admin)
-                {
-                    return Forbid(); // Deny access
-                }
-
-                await _tasksService.ShareTaskUserAsync(taskId, participant);
-                return Ok("Task was shared successfully");
+                throw new UnauthorizedAccessException("You don't have permission");
             }
-            catch(Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+
+            await _tasksService.ShareTaskUserAsync(taskId, participant);
+
+            ApiResponse<string> response = new ApiResponse<string>((int)HttpStatusCode.OK, "Task was shared successfully");
+
+            return Ok(response);
+            
+
         }
 
         // POST: api/Task/{taskId}/share/participants
         [HttpPost("{taskId}/share/participants")]
         public async Task<IActionResult> ShareTaskMultipleUsers([FromRoute] Guid taskId, [FromBody] List<UserPermissionDTO> participants)
         {
-            try
+            // Retrieve task by its ID
+            TaskItem task = await _tasksService.GetTaskByIdAsync(taskId);
+
+            Guid userId = GetUserId();
+            bool admin = IsAdmin();
+
+            //Only the creator or an admin can share the task
+            if (task.ReporterId != userId && !admin)
             {
-                // Retrieve task by its ID
-                TaskItem task = await _tasksService.GetTaskByIdAsync(taskId);
-
-                Guid userId = GetUserId();
-                bool admin = IsAdmin();
-
-                //Only the creator or an admin can share the task
-                if (task.ReporterId != userId && !admin)
-                {
-                    return Forbid();
-                }
-
-                await _tasksService.ShareTaskMultipleUsersAsync(taskId, participants);
-
-                return Ok("Task was shared successfully with selected users");
+                throw new UnauthorizedAccessException("You don't have permission");
             }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+
+            await _tasksService.ShareTaskMultipleUsersAsync(taskId, participants);
+
+            ApiResponse<string> response = new ApiResponse<string>((int)HttpStatusCode.OK, "Task was shared successfully with selected users");
+
+            return Ok(response);
+          
         }
 
         // Retrieve the user's id from claims

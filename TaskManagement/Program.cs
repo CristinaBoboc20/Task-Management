@@ -5,6 +5,7 @@ using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
 using TaskManagement.Authentication;
 using TaskManagement.Data;
+using TaskManagement.Middleware;
 using TaskManagement.Repositories;
 using TaskManagement.Services;
 
@@ -81,6 +82,9 @@ builder.Services.AddScoped<ITasksService, TasksService>();
 // Register Task Repository
 builder.Services.AddTransient<ITasksRepository, TasksRepository>();
 
+// Register Exception Middleware
+builder.Services.AddScoped<ExceptionMiddleware>();
+
 // Register Basic Authentication
 builder.Services.AddAuthentication("BasicAuthentication")
        .AddScheme<AuthenticationSchemeOptions, BasicAuthentication>("BasicAuthentication", null);
@@ -104,6 +108,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v1/swagger.json", "Task Management API v1"));
 }
+
+// Add Exception Middleware
+app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 
