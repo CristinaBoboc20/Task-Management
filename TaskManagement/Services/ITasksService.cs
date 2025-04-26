@@ -1,4 +1,6 @@
-﻿using TaskManagement.Models;
+﻿using TaskManagement.DTOs;
+using TaskManagement.Enums;
+using TaskManagement.Models;
 
 namespace TaskManagement.Services
 {
@@ -20,9 +22,12 @@ namespace TaskManagement.Services
         public Task<bool> DeleteTaskAsync(Guid taskId);
 
         // Share a task with another user
-        public Task ShareTaskUserAsync(Guid taskId, Guid userId);
+        public Task ShareTaskUserAsync(Guid taskId, UserPermissionDTO participant);
 
         // Share a task with multiple users
-        public Task ShareTaskMultipleUsersAsync(Guid taskId, List<Guid> userIds);
+        public Task ShareTaskMultipleUsersAsync(Guid taskId, List<UserPermissionDTO> participants);
+
+        // Check if the user has permission to edit the task
+        public Task<bool> UserPermissionEditTaskAsync(Guid taskId, Guid userId);
     }
 }

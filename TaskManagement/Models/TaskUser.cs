@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using TaskManagement.Enums;
 
 namespace TaskManagement.Models
 {
@@ -14,6 +15,8 @@ namespace TaskManagement.Models
         [Required]
         public Guid UserId { get; set; }
         public DateTime SharedAt { get; set; } = DateTime.UtcNow;
+
+        public Permission Permission { get; set; } = Permission.Read;
         
         [JsonIgnore]
         public virtual TaskItem Task { get; set; }

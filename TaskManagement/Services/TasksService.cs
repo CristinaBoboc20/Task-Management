@@ -1,5 +1,7 @@
 ﻿using System.Linq.Expressions;
 using TaskManagement.Data;
+using TaskManagement.DTOs;
+using TaskManagement.Enums;
 using TaskManagement.Models;
 using TaskManagement.Repositories;
 
@@ -93,11 +95,11 @@ namespace TaskManagement.Services
         }
 
         // Share a task with another user
-        public async Task ShareTaskUserAsync(Guid taskId, Guid userId)
+        public async Task ShareTaskUserAsync(Guid taskId, UserPermissionDTO participant)
         {
             try
             {
-                await _tasksRepository.ShareTaskUserAsync(taskId, userId);
+                await _tasksRepository.ShareTaskUserAsync(taskId, participant.UserId, participant.Permission);
             }
             catch (Exception ex)
             {
@@ -106,19 +108,32 @@ namespace TaskManagement.Services
         }
 
         // Share a task with multiple users
-        public async Task ShareTaskMultipleUsersAsync(Guid taskId, List<Guid> userIds)
+        public async Task ShareTaskMultipleUsersAsync(Guid taskId, List<UserPermissionDTO> participants)
         {
             try
             {
                 // Share task with each user
-                foreach(Guid userId in userIds)
+                foreach(UserPermissionDTO participant in participants)
                 {
-                    await _tasksRepository.ShareTaskUserAsync(taskId, userId);
+                    await _tasksRepository.ShareTaskUserAsync(taskId, participant.UserId, participant.Permission);
                 }
             }
             catch (Exception ex)
             {
                 throw new Exception("Error occurred while sharing the task with multiple users");
+            }
+        }
+
+        // Check if the user has permission to edit the task
+        public async Task<bool> UserPermissionEditTaskAsync(Guid taskId, Guid userId)
+        {
+            try
+            {
+                return await _tasksRepository.GetUserPermissionEditTaskAsync(taskId, userId);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error occured while checking user permission to edit task", ex);
             }
         }
 

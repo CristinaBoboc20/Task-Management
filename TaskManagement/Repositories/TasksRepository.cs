@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Formats.Asn1;
 using TaskManagement.Data;
+using TaskManagement.Enums;
 using TaskManagement.Models;
 
 namespace TaskManagement.Repositories
@@ -124,7 +125,7 @@ namespace TaskManagement.Repositories
         }
 
         // Share a task with another user
-        public async Task ShareTaskUserAsync(Guid taskId, Guid userId)
+        public async Task ShareTaskUserAsync(Guid taskId, Guid userId, Permission permission)
         {
             try
             {
@@ -140,23 +141,25 @@ namespace TaskManagement.Repositories
                 // Check it's already shared with the given user
                 TaskUser taskUserDb = await _context.TaskUsers.FirstOrDefaultAsync(tu => tu.TaskId == taskId && tu.UserId == userId);
 
-                if(taskUserDb != null)
+                if (taskUserDb != null)
                 {
-                    return;
+                    taskUserDb.Permission = permission;
                 }
-
-                // Initialize a new shared task instance
-                TaskUser taskUser = new TaskUser
+                else
                 {
-                    TaskUserId = Guid.NewGuid(),
-                    TaskId = taskId,
-                    UserId = userId,
-                    SharedAt = DateTime.UtcNow
-                };
+                    // Initialize a new shared task instance
+                    TaskUser taskUser = new TaskUser
+                    {
+                        TaskUserId = Guid.NewGuid(),
+                        TaskId = taskId,
+                        UserId = userId,
+                        SharedAt = DateTime.UtcNow,
+                        Permission = permission
+                    };
 
-                // Add the shared task to the context
-                _context.TaskUsers.Add(taskUser);
-
+                    // Add the shared task to the context
+                    _context.TaskUsers.Add(taskUser);
+                }
                 // Save changes to the db
                 await _context.SaveChangesAsync();
 
@@ -164,6 +167,28 @@ namespace TaskManagement.Repositories
             catch (Exception ex)
             {
                 throw new Exception("Error sharing task with user", ex);
+            }
+        }
+
+        // Check if the user has write permissiom
+        public async Task<bool> GetUserPermissionEditTaskAsync(Guid taskId, Guid userId)
+        {
+            try
+            {
+                // Get the shared task 
+                TaskUser taskUser = await _context.TaskUsers.Where(tu => tu.TaskId == taskId && tu.UserId == userId)
+                                                            .FirstOrDefaultAsync();
+                if (taskUser == null)
+                {
+                    return false;
+                }
+
+
+                return taskUser.Permission == Permission.ReadWrite;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error checking user permission", ex);
             }
         }
 

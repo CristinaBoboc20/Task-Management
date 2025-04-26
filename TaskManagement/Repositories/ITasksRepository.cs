@@ -1,4 +1,5 @@
-﻿using TaskManagement.Models;
+﻿using TaskManagement.Enums;
+using TaskManagement.Models;
 
 namespace TaskManagement.Repositories
 {
@@ -20,7 +21,10 @@ namespace TaskManagement.Repositories
         public Task<bool> DeleteTaskAsync(Guid id);
         
         // Share a task with another user
-        public Task ShareTaskUserAsync(Guid taskId, Guid userId);
+        public Task ShareTaskUserAsync(Guid taskId, Guid userId, Permission permission);
+
+        //Check if the user has write permission
+        public Task<bool> GetUserPermissionEditTaskAsync(Guid taskId, Guid userId);
 
        
     }

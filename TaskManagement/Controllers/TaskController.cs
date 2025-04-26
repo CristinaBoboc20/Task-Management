@@ -2,9 +2,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics.Eventing.Reader;
 using System.Net;
 using System.Security.Claims;
 using TaskManagement.DTOs;
+using TaskManagement.Enums;
 using TaskManagement.Models;
 using TaskManagement.Services;
 
@@ -35,6 +37,7 @@ namespace TaskManagement.Controllers
 
                 Guid userId = GetUserId();
                 bool admin = IsAdmin();
+
 
                 // Allow only the task creator, a participant or admin to access the task
                 if (task.ReporterId != userId && !task.Participants.Any(p => p.UserId == userId) && !admin)
@@ -107,10 +110,15 @@ namespace TaskManagement.Controllers
                 TaskItem existingTask = await _tasksService.GetTaskByIdAsync(taskId);
 
                 Guid userId = GetUserId();
-                bool admin = IsAdmin();
                 
-                // Only the creator or an admin can update the task
-                if (existingTask.ReporterId != userId && !admin)
+                bool admin = IsAdmin();
+
+                bool participantEditPermission = await _tasksService.UserPermissionEditTaskAsync(taskId, userId);
+
+                bool hasEditPermission = existingTask.ReporterId == userId || admin || participantEditPermission;
+                
+                // Only the creator, an admin or a participant that has write permission can update the task
+                if (!hasEditPermission)
                 {
                     return Forbid(); // Deny access
                 }
@@ -159,9 +167,9 @@ namespace TaskManagement.Controllers
             }
         }
 
-        // POST: apo/Task/{taskId}/share/{participantId}
-        [HttpPost("{taskId}/share/{participantId}")]
-        public async Task<IActionResult> ShareTask([FromRoute] Guid taskId, Guid participantId)
+        // POST: apo/Task/{taskId}/share/participant
+        [HttpPost("{taskId}/share/participant")]
+        public async Task<IActionResult> ShareTask([FromRoute] Guid taskId, [FromBody] UserPermissionDTO participant)
         {
             try
             {
@@ -178,7 +186,7 @@ namespace TaskManagement.Controllers
                     return Forbid(); // Deny access
                 }
 
-                await _tasksService.ShareTaskUserAsync(taskId, participantId);
+                await _tasksService.ShareTaskUserAsync(taskId, participant);
                 return Ok("Task was shared successfully");
             }
             catch(Exception ex)
@@ -189,7 +197,7 @@ namespace TaskManagement.Controllers
 
         // POST: api/Task/{taskId}/share/participants
         [HttpPost("{taskId}/share/participants")]
-        public async Task<IActionResult> ShareTaskMultipleUsers([FromRoute] Guid taskId, [FromBody] List<Guid> participantIds)
+        public async Task<IActionResult> ShareTaskMultipleUsers([FromRoute] Guid taskId, [FromBody] List<UserPermissionDTO> participants)
         {
             try
             {
@@ -205,7 +213,7 @@ namespace TaskManagement.Controllers
                     return Forbid();
                 }
 
-                await _tasksService.ShareTaskMultipleUsersAsync(taskId, participantIds);
+                await _tasksService.ShareTaskMultipleUsersAsync(taskId, participants);
 
                 return Ok("Task was shared successfully with selected users");
             }

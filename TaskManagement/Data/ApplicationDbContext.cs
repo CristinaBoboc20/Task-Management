@@ -57,7 +57,10 @@ namespace TaskManagement.Data
                                            .HasConversion<string>();
             
             modelBuilder.Entity<User>().Property(u => u.Role)
-                                       .HasConversion<string>();   
+                                       .HasConversion<string>();
+            
+            modelBuilder.Entity<TaskUser>().Property(tu => tu.Permission)
+                                           .HasConversion<string>();   
         }
     }
 }
