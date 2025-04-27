@@ -21,14 +21,12 @@ namespace TaskManagement.Controllers
         private readonly IUserContextService _userContextService;
         private readonly ITasksService _tasksService;
         private readonly ITaskSharingService _tasksSharingService;
-        private readonly IMapper _mapper;
        
-        public TaskController(IUserContextService userContextService, ITasksService tasksService, ITaskSharingService taskSharingService, IMapper mapper)
+        public TaskController(IUserContextService userContextService, ITasksService tasksService, ITaskSharingService taskSharingService)
         {
             _userContextService = userContextService;
             _tasksService = tasksService;
             _tasksSharingService = taskSharingService;
-            _mapper = mapper;
         }
 
         // Get task by its ID
@@ -79,14 +77,10 @@ namespace TaskManagement.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateTask([FromBody] CreateUpdateTaskDTO taskDTO)
         {
-
-            // Mapping CreateUpdateTaskDTO to TaskItem
-            TaskItem task = _mapper.Map<TaskItem>(taskDTO);
-
-            // Set the creator of the task as the current user
-            task.ReporterId = _userContextService.GetUserId();
+            // Get the current user's ID
+            Guid userId = _userContextService.GetUserId();
                  
-            TaskItem createdTask = await _tasksService.CreateTaskAsync(task);
+            TaskItem createdTask = await _tasksService.CreateTaskAsync(taskDTO, userId);
 
             ApiResponse<TaskItem> response = new ApiResponse<TaskItem>((int)HttpStatusCode.Created, "Task created successfully", createdTask);
             
@@ -118,11 +112,8 @@ namespace TaskManagement.Controllers
                 throw new UnauthorizedAccessException("You don't have permission..");
             }
 
-            // Mapping CreateUpdateTaskDTO to existing TaskItem
-            _mapper.Map(taskDTO, existingTask);
-
             // Update the task with the new data
-            TaskItem updatedTask = await _tasksService.UpdateTaskAsync(taskId, existingTask);
+            TaskItem updatedTask = await _tasksService.UpdateTaskAsync(taskId, taskDTO);
 
             ApiResponse<TaskItem> response = new ApiResponse<TaskItem>((int)HttpStatusCode.OK, "Task updated successfully", updatedTask);
 

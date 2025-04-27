@@ -13,10 +13,10 @@ namespace TaskManagement.Services
         public Task<IEnumerable<TaskItem>> GetTasksUserAsync(Guid userId);
         
         // Create a new task
-        public Task<TaskItem> CreateTaskAsync(TaskItem task);
+        public Task<TaskItem> CreateTaskAsync(CreateUpdateTaskDTO taskDTO, Guid userId);
         
         // Update the specified task with new values
-        public Task<TaskItem> UpdateTaskAsync(Guid taskId, TaskItem task);
+        public Task<TaskItem> UpdateTaskAsync(Guid taskId, CreateUpdateTaskDTO taskDTO);
         
         // Delete the specified task
         public Task<bool> DeleteTaskAsync(Guid taskId);

@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using AutoMapper;
+using System.Linq.Expressions;
 using TaskManagement.Data;
 using TaskManagement.DTOs;
 using TaskManagement.Enums;
@@ -10,10 +11,12 @@ namespace TaskManagement.Services
     public class TasksService : ITasksService
     {
         private readonly ITasksRepository _tasksRepository;
+        private readonly IMapper _mapper;
 
-        public TasksService(ITasksRepository tasksRepository)
+        public TasksService(ITasksRepository tasksRepository, IMapper mapper)
         {
             _tasksRepository  = tasksRepository;
+            _mapper = mapper;
         }
 
         // Get a task by its ID
@@ -40,14 +43,20 @@ namespace TaskManagement.Services
 
         // Create a new task
 
-        public async Task<TaskItem> CreateTaskAsync(TaskItem task)
+        public async Task<TaskItem> CreateTaskAsync(CreateUpdateTaskDTO taskDTO, Guid userId)
         {
+            // Mapping CreateUpdateTaskDTO to TaskItem
+            TaskItem task = _mapper.Map<TaskItem>(taskDTO);
+
+            // Set the creator of the task as the current user
+            task.ReporterId = userId;
+
             return await _tasksRepository.CreateTaskAsync(task);  
         }
 
         // Update an existing task
 
-        public async Task<TaskItem> UpdateTaskAsync(Guid taskId, TaskItem task)
+        public async Task<TaskItem> UpdateTaskAsync(Guid taskId, CreateUpdateTaskDTO taskDTO)
         {
             TaskItem existingTask = await _tasksRepository.GetTaskByIdAsync(taskId);
 
@@ -55,8 +64,11 @@ namespace TaskManagement.Services
             {
                 throw new KeyNotFoundException("Task not found");
             }
-            
-            return await _tasksRepository.UpdateTaskAsync(taskId, task);
+
+            // Mapping CreateUpdateTaskDTO to existing TaskItem
+            _mapper.Map(taskDTO, existingTask);
+
+            return await _tasksRepository.UpdateTaskAsync(taskId, existingTask);
             
         }
 
