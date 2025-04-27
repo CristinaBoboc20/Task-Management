@@ -13,3 +13,5 @@ TaskManagement/.env
 TaskManagement/TaskManagement.csproj.user
 TaskManagement/TaskManagement.csproj.user
 /TaskManagement/TaskManagement.csproj.user
+/TaskManagementTests/obj
+/TaskManagementTests/bin/Debug/net9.0
