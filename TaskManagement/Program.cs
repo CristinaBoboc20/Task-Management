@@ -78,9 +78,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Register Task Service
 builder.Services.AddScoped<ITasksService, TasksService>();
+builder.Services.AddScoped<ITaskSharingService, TaskSharingService>();
+
 
 // Register Task Repository
 builder.Services.AddTransient<ITasksRepository, TasksRepository>();
+builder.Services.AddTransient<ITaskSharingRepository, TaskSharingRepository>();
 
 // Register Exception Middleware
 builder.Services.AddScoped<ExceptionMiddleware>();

@@ -20,11 +20,8 @@ namespace TaskManagement.Repositories
         // Delete a task using its ID
         public Task<bool> DeleteTaskAsync(Guid id);
         
-        // Share a task with another user
-        public Task ShareTaskUserAsync(Guid taskId, Guid userId, Permission permission);
-
-        //Check if the user has write permission
-        public Task<bool> GetUserPermissionEditTaskAsync(Guid taskId, Guid userId);
+     
+        
 
        
     }

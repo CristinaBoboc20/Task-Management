@@ -19,10 +19,13 @@ namespace TaskManagement.Controllers
     public class TaskController : ControllerBase
     {
         private readonly ITasksService _tasksService;
+        private readonly ITaskSharingService _tasksSharingService;
         private readonly IMapper _mapper;
-        public TaskController(ITasksService tasksService, IMapper mapper)
+       
+        public TaskController(ITasksService tasksService, ITaskSharingService taskSharingService, IMapper mapper)
         {
             _tasksService = tasksService;
+            _tasksSharingService = taskSharingService;
             _mapper = mapper;
         }
 
@@ -103,7 +106,7 @@ namespace TaskManagement.Controllers
                 
             bool admin = IsAdmin();
 
-            bool participantEditPermission = await _tasksService.UserPermissionEditTaskAsync(taskId, userId);
+            bool participantEditPermission = await _tasksSharingService.GetParticipantPermissionEditTaskAsync(taskId, userId);
 
             bool hasEditPermission = existingTask.ReporterId == userId || admin || participantEditPermission;
                 
@@ -151,56 +154,7 @@ namespace TaskManagement.Controllers
 
         }
 
-        // POST: apo/Task/{taskId}/share/participant
-        [HttpPost("{taskId}/share/participant")]
-        public async Task<IActionResult> ShareTask([FromRoute] Guid taskId, [FromBody] UserPermissionDTO participant)
-        {
-           
-            // Get the existing task
-            TaskItem task = await _tasksService.GetTaskByIdAsync(taskId);
-
-            Guid userId = GetUserId();
-
-            bool admin = IsAdmin();
-
-            //Only the creator or an admin can share the task
-            if (task.ReporterId != userId && !admin)
-            {
-                throw new UnauthorizedAccessException("You don't have permission");
-            }
-
-            await _tasksService.ShareTaskUserAsync(taskId, participant);
-
-            ApiResponse<string> response = new ApiResponse<string>((int)HttpStatusCode.OK, "Task was shared successfully");
-
-            return Ok(response);
-            
-
-        }
-
-        // POST: api/Task/{taskId}/share/participants
-        [HttpPost("{taskId}/share/participants")]
-        public async Task<IActionResult> ShareTaskMultipleUsers([FromRoute] Guid taskId, [FromBody] List<UserPermissionDTO> participants)
-        {
-            // Retrieve task by its ID
-            TaskItem task = await _tasksService.GetTaskByIdAsync(taskId);
-
-            Guid userId = GetUserId();
-            bool admin = IsAdmin();
-
-            //Only the creator or an admin can share the task
-            if (task.ReporterId != userId && !admin)
-            {
-                throw new UnauthorizedAccessException("You don't have permission");
-            }
-
-            await _tasksService.ShareTaskMultipleUsersAsync(taskId, participants);
-
-            ApiResponse<string> response = new ApiResponse<string>((int)HttpStatusCode.OK, "Task was shared successfully with selected users");
-
-            return Ok(response);
-          
-        }
+      
 
         // Retrieve the user's id from claims
         private Guid GetUserId()
