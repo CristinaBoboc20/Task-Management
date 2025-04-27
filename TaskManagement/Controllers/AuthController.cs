@@ -9,6 +9,7 @@ using TaskManagement.DTOs;
 using TaskManagement.Enums;
 using TaskManagement.Helpers;
 using TaskManagement.Models;
+using TaskManagement.Services;
 
 namespace TaskManagement.Authentication
 {
@@ -16,13 +17,11 @@ namespace TaskManagement.Authentication
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
-        private readonly PasswordHasher<User> _hasher;
+        private readonly IUsersService _usersService;
 
-        public AuthController(ApplicationDbContext context)
+        public AuthController(IUsersService usersService)
         {
-            _context = context;
-            _hasher = new PasswordHasher<User>();
+            _usersService = usersService;
         }
 
         //POST: api/Auth/register
@@ -36,73 +35,49 @@ namespace TaskManagement.Authentication
                 return BadRequest(badRequestResponse);
             }
 
-            // Check if the username already exists
-            bool userExists = await _context.Users.AnyAsync(u => u.UserName == request.UserName);
+            UserDTO userDTO = await _usersService.RegisterUserAsync(request.UserName, request.Password);
 
-            if (userExists)
-            {
-                ApiResponse<string> userExistResponse = new ApiResponse<string>((int)HttpStatusCode.BadRequest, "Username already exists");
-                return BadRequest(userExistResponse);
-            }
+            ApiResponse<object> successResponse = new ApiResponse<object>((int)HttpStatusCode.Created, "User registered successfully", userDTO);
+            return CreatedAtAction(nameof(Register), new { userId = userDTO.UserId }, successResponse);
 
-            // Create a new User instance 
-            User user = new User
-            {
-                UserId = Guid.NewGuid(),
-                UserName = request.UserName,
-                Role = Role.User
-            };
-
-            // Hash the user's password
-            user.Password = _hasher.HashPassword(user, request.Password);
-
-            //Add user to db
-            _context.Users.Add(user);
-
-            //Save changes 
-            await _context.SaveChangesAsync();
-
-            ApiResponse<object> successResponse = new ApiResponse<object>((int)HttpStatusCode.Created, "User registered successfully", new { userId = user.UserId });
-            return CreatedAtAction(nameof(Register), new { userId = user.UserId }, successResponse);
-            
 
         }
 
-        // POST: api/Auth/login
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequestDTO request)
-        {
-            // Find the user by username
-            User user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == request.UserName);
+        //// POST: api/Auth/login
+        //[HttpPost("login")]
+        //public async Task<IActionResult> Login([FromBody] LoginRequestDTO request)
+        //{
+        //    // Find the user by username
+        //    User user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == request.UserName);
 
-            if (user == null)
-            {
-                ApiResponse<string> unauthorizedResponse = new ApiResponse<string>((int)HttpStatusCode.Unauthorized, "Invalid username or password");
-                return Unauthorized(unauthorizedResponse);
-            }
+        //    if (user == null)
+        //    {
+        //        ApiResponse<string> unauthorizedResponse = new ApiResponse<string>((int)HttpStatusCode.Unauthorized, "Invalid username or password");
+        //        return Unauthorized(unauthorizedResponse);
+        //    }
 
-            // Check if the password matches the hashed password in the db
-            var result = _hasher.VerifyHashedPassword(user, user.Password, request.Password);
+        //    // Check if the password matches the hashed password in the db
+        //    var result = _hasher.VerifyHashedPassword(user, user.Password, request.Password);
 
-            if (result != PasswordVerificationResult.Success)
-            {
-                ApiResponse<string> unauthorizedResponse = new ApiResponse<string>((int)HttpStatusCode.Unauthorized, "Invalid username or password");
-                return Unauthorized(unauthorizedResponse);
-            }
+        //    if (result != PasswordVerificationResult.Success)
+        //    {
+        //        ApiResponse<string> unauthorizedResponse = new ApiResponse<string>((int)HttpStatusCode.Unauthorized, "Invalid username or password");
+        //        return Unauthorized(unauthorizedResponse);
+        //    }
 
-            // Return response with user info
-            var response = new LoginResponseDTO
-            {
-                UserId = user.UserId,
-                UserName = request.UserName,
-                Role = user.Role.ToString(),
-            };
+        //    // Return response with user info
+        //    var response = new LoginResponseDTO
+        //    {
+        //        UserId = user.UserId,
+        //        UserName = request.UserName,
+        //        Role = user.Role.ToString(),
+        //    };
             
-            ApiResponse<LoginResponseDTO> successResponse = new ApiResponse<LoginResponseDTO>((int)HttpStatusCode.OK, "Login successful", response);
+        //    ApiResponse<LoginResponseDTO> successResponse = new ApiResponse<LoginResponseDTO>((int)HttpStatusCode.OK, "Login successful", response);
                 
-            return Ok(successResponse);
+        //    return Ok(successResponse);
 
-        }
+        //}
 
 
     }

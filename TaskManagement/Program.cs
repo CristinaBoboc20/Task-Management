@@ -77,16 +77,16 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString);
 });
 
-// Register Task Service
+// Register Task and UserService
 builder.Services.AddScoped<ITasksService, TasksService>();
 builder.Services.AddScoped<ITaskSharingService, TaskSharingService>();
-
+builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<IUserContextService, UserContextService>();
 
 // Register Task Repository
 builder.Services.AddTransient<ITasksRepository, TasksRepository>();
 builder.Services.AddTransient<ITaskSharingRepository, TaskSharingRepository>();
-
+builder.Services.AddTransient<IUsersRepository, UsersRepository>();
 
 // Register Exception Middleware
 builder.Services.AddScoped<ExceptionMiddleware>();

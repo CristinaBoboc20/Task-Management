@@ -13,6 +13,13 @@ namespace TaskManagement.Utilities
             CreateMap<CreateUpdateTaskDTO, TaskItem>()
                  .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
                  .ForMember(dest => dest.ReporterId, opt => opt.Ignore());
+
+            // Mapping User to UserDTO 
+
+            CreateMap<User, UserDTO>()
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToString()));
+
+            //CreateMap<RegisterRequestDTO, User>();
         }
     }
 }
