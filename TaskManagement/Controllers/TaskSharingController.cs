@@ -19,14 +19,12 @@ namespace TaskManagement.Controllers
         private readonly IUserContextService _userContextService;
         private readonly ITaskSharingService _tasksSharingService;
         private readonly ITasksService _tasksService;
-        private readonly IMapper _mapper;
 
-        public TaskSharingController(IUserContextService userContextService,ITaskSharingService taskSharingService, ITasksService tasksService,IMapper mapper)
+        public TaskSharingController(IUserContextService userContextService,ITaskSharingService taskSharingService, ITasksService tasksService)
         {
             _userContextService = userContextService;
             _tasksSharingService = taskSharingService;
             _tasksService = tasksService;
-            _mapper = mapper;
         }
 
 
