@@ -18,12 +18,14 @@ namespace TaskManagement.Controllers
     [Authorize]
     public class TaskController : ControllerBase
     {
+        private readonly IUserContextService _userContextService;
         private readonly ITasksService _tasksService;
         private readonly ITaskSharingService _tasksSharingService;
         private readonly IMapper _mapper;
        
-        public TaskController(ITasksService tasksService, ITaskSharingService taskSharingService, IMapper mapper)
+        public TaskController(IUserContextService userContextService, ITasksService tasksService, ITaskSharingService taskSharingService, IMapper mapper)
         {
+            _userContextService = userContextService;
             _tasksService = tasksService;
             _tasksSharingService = taskSharingService;
             _mapper = mapper;
@@ -38,8 +40,8 @@ namespace TaskManagement.Controllers
             // Retrieve task using its ID
             TaskItem task = await _tasksService.GetTaskByIdAsync(taskId);
 
-            Guid userId = GetUserId();
-            bool admin = IsAdmin();
+            Guid userId = _userContextService.GetUserId();
+            bool admin = _userContextService.IsAdmin();
 
 
             // Allow only the task creator, a participant or admin to access the task
@@ -62,7 +64,7 @@ namespace TaskManagement.Controllers
         public async Task<IActionResult> GetUserTasks()
         { 
             // Get the current user's ID
-            Guid userId = GetUserId();
+            Guid userId = _userContextService.GetUserId();
 
             //Retrieve all the tasks created by the current user
             IEnumerable<TaskItem> tasks = await _tasksService.GetTasksUserAsync(userId);
@@ -82,7 +84,7 @@ namespace TaskManagement.Controllers
             TaskItem task = _mapper.Map<TaskItem>(taskDTO);
 
             // Set the creator of the task as the current user
-            task.ReporterId = GetUserId();
+            task.ReporterId = _userContextService.GetUserId();
                  
             TaskItem createdTask = await _tasksService.CreateTaskAsync(task);
 
@@ -102,9 +104,9 @@ namespace TaskManagement.Controllers
             // Get the existing Task
             TaskItem existingTask = await _tasksService.GetTaskByIdAsync(taskId);
 
-            Guid userId = GetUserId();
+            Guid userId = _userContextService.GetUserId();
                 
-            bool admin = IsAdmin();
+            bool admin = _userContextService.IsAdmin();
 
             bool participantEditPermission = await _tasksSharingService.GetParticipantPermissionEditTaskAsync(taskId, userId);
 
@@ -136,9 +138,9 @@ namespace TaskManagement.Controllers
             // Get the existing task
             TaskItem task = await _tasksService.GetTaskByIdAsync(taskId);
 
-            Guid userId = GetUserId();
+            Guid userId = _userContextService.GetUserId();
 
-            bool admin = IsAdmin();
+            bool admin = _userContextService.IsAdmin();
 
             // Only the creator or an admin can delete the task
             if (task.ReporterId != userId && !admin)
@@ -153,37 +155,5 @@ namespace TaskManagement.Controllers
             return Ok(response);
 
         }
-
-      
-
-        // Retrieve the user's id from claims
-        private Guid GetUserId()
-        {
-            string userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrEmpty(userIdClaim))
-            {
-                throw new UnauthorizedAccessException("User ID claim is missing"); 
-            }
-
-            return Guid.Parse(userIdClaim);
-
-        }
-        
-
-        // Retrieve the user's role from claims
-        private string GetUserRole()
-        {
-            var roleClaim = User.FindFirst(ClaimTypes.Role);
-
-            return roleClaim?.Value ?? "User";
-        } 
-           
-        
-        // Check if the user is an admin
-        private bool IsAdmin()
-        {
-            return string.Equals(GetUserRole(), "Admin", StringComparison.OrdinalIgnoreCase);
-        } 
     }
 }

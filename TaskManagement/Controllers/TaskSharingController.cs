@@ -16,12 +16,14 @@ namespace TaskManagement.Controllers
     [Authorize]
     public class TaskSharingController : ControllerBase
     {
+        private readonly IUserContextService _userContextService;
         private readonly ITaskSharingService _tasksSharingService;
         private readonly ITasksService _tasksService;
         private readonly IMapper _mapper;
 
-        public TaskSharingController(ITaskSharingService taskSharingService, ITasksService tasksService,IMapper mapper)
+        public TaskSharingController(IUserContextService userContextService,ITaskSharingService taskSharingService, ITasksService tasksService,IMapper mapper)
         {
+            _userContextService = userContextService;
             _tasksSharingService = taskSharingService;
             _tasksService = tasksService;
             _mapper = mapper;
@@ -36,9 +38,9 @@ namespace TaskManagement.Controllers
             // Get the existing task
             TaskItem task = await _tasksService.GetTaskByIdAsync(taskId);
 
-            Guid userId = GetUserId();
+            Guid userId = _userContextService.GetUserId();
 
-            bool admin = IsAdmin();
+            bool admin = _userContextService.IsAdmin();
 
             //Only the creator or an admin can share the task
             if (task.ReporterId != userId && !admin)
@@ -56,14 +58,14 @@ namespace TaskManagement.Controllers
         }
 
         // POST: api/TaskSharing/{taskId}/participants
-        [HttpPost("{taskId}/share/participants")]
+        [HttpPost("{taskId}/participants")]
         public async Task<IActionResult> ShareTaskMultipleUsers([FromRoute] Guid taskId, [FromBody] List<UserPermissionDTO> participants)
         {
             // Retrieve task by its ID
             TaskItem task = await _tasksService.GetTaskByIdAsync(taskId);
 
-            Guid userId = GetUserId();
-            bool admin = IsAdmin();
+            Guid userId = _userContextService.GetUserId();
+            bool admin = _userContextService.IsAdmin();
 
             //Only the creator or an admin can share the task
             if (task.ReporterId != userId && !admin)
@@ -79,35 +81,5 @@ namespace TaskManagement.Controllers
 
         }
 
-
-        // Retrieve the user's id from claims
-        private Guid GetUserId()
-        {
-            string userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrEmpty(userIdClaim))
-            {
-                throw new UnauthorizedAccessException("User ID claim is missing");
-            }
-
-            return Guid.Parse(userIdClaim);
-
-        }
-
-
-        // Retrieve the user's role from claims
-        private string GetUserRole()
-        {
-            var roleClaim = User.FindFirst(ClaimTypes.Role);
-
-            return roleClaim?.Value ?? "User";
-        }
-
-
-        // Check if the user is an admin
-        private bool IsAdmin()
-        {
-            return string.Equals(GetUserRole(), "Admin", StringComparison.OrdinalIgnoreCase);
-        }
     }
 }

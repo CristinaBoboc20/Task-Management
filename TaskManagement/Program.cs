@@ -18,6 +18,7 @@ Env.Load();
 
 var configuration = builder.Configuration;
 
+builder.Services.AddHttpContextAccessor();
 
 // Add services to the container.
 
@@ -80,10 +81,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<ITasksService, TasksService>();
 builder.Services.AddScoped<ITaskSharingService, TaskSharingService>();
 
+builder.Services.AddScoped<IUserContextService, UserContextService>();
 
 // Register Task Repository
 builder.Services.AddTransient<ITasksRepository, TasksRepository>();
 builder.Services.AddTransient<ITaskSharingRepository, TaskSharingRepository>();
+
 
 // Register Exception Middleware
 builder.Services.AddScoped<ExceptionMiddleware>();
