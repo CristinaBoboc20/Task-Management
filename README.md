@@ -77,15 +77,15 @@ Participantul este utilizatorul caruia i-a fost distribuit taskul.
 | Priority     | enum (Highest, High, Medium, Low, Lowest)      | Prioritatea task-ului              |
 | Status       | enum (ToDo, InProgress, InReview, Blocked,Done)| Statusul task-ului                 |
 | CreatedData  | DateTime                                       | Data Crearii                       |
-| DueDate      | DateTime                                       | Data limita (deadline)            |
+| DueDate      | DateTime                                       | Data limita (deadline)             |
 | ReporterId   | Guid                                           | Id-ul userului care a creat task-ul|
 
 
-3. TaskUser => reprezinta task-ul distribuit
+3. TaskUser 
 
 | Proprietate  |  Tip                                           | Descriere                                                    |                     
 | ------------ | ---------------------------------------------- | -----------------------------------------------------------  |
-| TaskUserId   | Guid                                           | Id-ul taskului distribuit                                    |                                                          
+| TaskUserId   | Guid                                           | Id-ul relatiei dintre task si user                           |                                               
 | TaskId       | Guid                                           | Id-ul taskului distribuit                                    |      
 | UserId       | Guid                                           | Id-ul utilizatorului caruia i-a fost distribuit taskul       |   
 | SharedAt     | DateTime                                       | Data cand a fost distribuit taskul                           |                               
